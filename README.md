@@ -1,2 +1,2 @@
 # gowechat
-wechat open interface inplemented in golang
+wechat open interface inplementation in golang
