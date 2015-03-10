@@ -11,7 +11,7 @@ import (
 	"io"
 )
 
-// DescrpytMsg is used to descrpyt the encrypted msg from wechat.
+// DecryptMsg is used to descrpyt the encrypted msg from wechat.
 // it returns the origData of the cipherText.
 // origData = AES_Decrypt(Base64_Decode[cipherText])
 func DecryptMsg(cipherText, encodingAESKey string) ([]byte, error) {
@@ -29,7 +29,7 @@ func DecryptMsg(cipherText, encodingAESKey string) ([]byte, error) {
 	return aesDecrypt(cipherData, AESKey)
 }
 
-// EscrpytMsg is used to encrpyt the msg being sent to wechat.
+// EncryptMsg is used to encrpyt the msg being sent to wechat.
 // it returns the cipherText of the origData.
 // cipherText = Base64_Encode(AES_Encrypt [origData])
 func EncryptMsg(origData []byte, encodingAESKey string) (string, error) {
@@ -99,8 +99,8 @@ func aesEncrypt(origData, AESKey []byte) ([]byte, error) {
 
 // padLength calculates padding length.
 // from github.com/vgorin/cryptogo.
-func padLength(slice_length, blocksize int) (padlen int) {
-	padlen = blocksize - slice_length%blocksize
+func padLength(sliceLength, blocksize int) (padlen int) {
+	padlen = blocksize - sliceLength%blocksize
 	if padlen == 0 {
 		padlen = blocksize
 	}
