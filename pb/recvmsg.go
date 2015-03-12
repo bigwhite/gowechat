@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
-	"net/http"
 	"sort"
 	"strings"
 )
@@ -35,7 +34,7 @@ type RecvRespBaseDataPkg struct {
 }
 
 type RecvHandler interface {
-	Parse(*http.Request) (interface{}, error)
+	Parse([]byte) (interface{}, error)
 }
 
 // ValidateURL is used to validate whether the http request

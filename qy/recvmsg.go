@@ -4,8 +4,6 @@ package qy
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/bigwhite/gowechat/pb"
 )
@@ -153,14 +151,8 @@ func NewRecvHandler(corpID, token, encodingAESKey string) pb.RecvHandler {
 //
 // Note: We suppose that r.ParseForm() has been invoked before entering this method.
 // and we suppose that you have validate the URL in the post request.
-func (h *recvHandler) Parse(r *http.Request) (interface{}, error) {
-	var bodyText []byte
+func (h *recvHandler) Parse(bodyText []byte) (interface{}, error) {
 	var err error
-
-	// HTTP decoding.
-	if bodyText, err = ioutil.ReadAll(r.Body); err != nil {
-		return nil, err
-	}
 
 	// XML decoding.
 	reqBody := &RecvHTTPReqBody{}
