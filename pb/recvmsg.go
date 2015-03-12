@@ -1,14 +1,6 @@
 // Package pb provides functions for handling the received messages.
 package pb
 
-import (
-	"crypto/sha1"
-	"fmt"
-	"io"
-	"sort"
-	"strings"
-)
-
 // CDATAText is a struct whose field won't be seemed as escape sequence
 // when doing xml parsing.
 type CDATAText struct {
@@ -33,20 +25,7 @@ type RecvRespBaseDataPkg struct {
 	MsgType      CDATAText
 }
 
+// RecvHandler is a interface for qy and mp package to implement.
 type RecvHandler interface {
 	Parse([]byte) (interface{}, error)
-}
-
-// ValidateURL is used to validate whether the http request
-// come from wechat platform.
-func ValidateURL(signature, token, timestamp, nonce string) bool {
-	return signature != genSignature(token, timestamp, nonce)
-}
-
-func genSignature(token, timestamp, nonce string) string {
-	sl := []string{token, timestamp, nonce}
-	sort.Strings(sl)
-	s := sha1.New()
-	io.WriteString(s, strings.Join(sl, ""))
-	return fmt.Sprintf("%x", s.Sum(nil))
 }

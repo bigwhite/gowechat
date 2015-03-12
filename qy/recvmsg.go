@@ -2,8 +2,12 @@
 package qy
 
 import (
+	"crypto/sha1"
 	"encoding/xml"
 	"fmt"
+	"io"
+	"sort"
+	"strings"
 
 	"github.com/bigwhite/gowechat/pb"
 )
@@ -214,4 +218,31 @@ func (h *recvHandler) Parse(bodyText []byte) (interface{}, error) {
 		return nil, err
 	}
 	return dataPkg, nil
+}
+
+// ValidateSignature is used to validate the signature in request to figure out
+// whether the http request come from wechat qy platform.
+func ValidateSignature(signature, token, timestamp, nonce, msgEncrypt string) bool {
+	return signature == genSignature(token, timestamp, nonce, msgEncrypt)
+}
+
+// dev_msg_signature=sha1(sort(token、timestamp、nonce、msg_encrypt))
+func genSignature(token, timestamp, nonce, msgEncrypt string) string {
+	sl := []string{token, timestamp, nonce, msgEncrypt}
+	sort.Strings(sl)
+	s := sha1.New()
+	io.WriteString(s, strings.Join(sl, ""))
+	return fmt.Sprintf("%x", s.Sum(nil))
+}
+
+func ValidateURL(signature, token, timestamp, nonce, cipherEchoStr, encodingAESKey string) (bool, []byte) {
+	if !ValidateSignature(signature, token, timestamp, nonce, cipherEchoStr) {
+		return false, nil
+	}
+
+	echostr, _, _, err := DecryptMsg(cipherEchoStr, encodingAESKey)
+	if err != nil {
+		return false, nil
+	}
+	return true, echostr
 }
