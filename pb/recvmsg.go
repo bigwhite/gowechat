@@ -34,5 +34,5 @@ type RecvRespBaseDataPkg struct {
 
 // RecvHandler is a interface for qy and mp package to implement.
 type RecvHandler interface {
-	Parse(bodyText []byte) (interface{}, error)
+	Parse(bodyText []byte, signature, timestamp, nonce string) (interface{}, error)
 }

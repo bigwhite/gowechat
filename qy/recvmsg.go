@@ -4,6 +4,7 @@ package qy
 import (
 	"crypto/sha1"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -155,7 +156,7 @@ func NewRecvHandler(corpID, token, encodingAESKey string) pb.RecvHandler {
 //
 // Note: We suppose that r.ParseForm() has been invoked before entering this method.
 // and we suppose that you have validate the URL in the post request.
-func (h *recvHandler) Parse(bodyText []byte) (interface{}, error) {
+func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce string) (interface{}, error) {
 	var err error
 
 	// XML decoding.
@@ -164,7 +165,11 @@ func (h *recvHandler) Parse(bodyText []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	fmt.Println(reqBody.Encrypt)
+	// Validate signature.
+	if !ValidateSignature(signature, h.token, timestamp, nonce, reqBody.Encrypt) {
+		return nil, errors.New("validate signature error")
+	}
+
 	// Decrpyt the "Encrypt" field.
 	var origData []byte
 	var corpID string
@@ -173,15 +178,9 @@ func (h *recvHandler) Parse(bodyText []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	fmt.Println(corpID)
-	fmt.Println(len(corpID))
-	fmt.Println(h.corpID)
-	fmt.Println(len(h.corpID))
 	if corpID != h.corpID {
 		return nil, fmt.Errorf("the request is from corp[%s], not from corp[%s]", corpID, h.corpID)
 	}
-
-	fmt.Println(string(origData))
 
 	// Probe the type of message.
 	probePkg := &struct {
