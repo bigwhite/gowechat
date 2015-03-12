@@ -39,7 +39,7 @@ const (
 // RecvTextDataPkg is a Text Message received from wechat platform.
 type RecvTextDataPkg struct {
 	pb.RecvBaseDataPkg
-	Content pb.CDATAText
+	Content string
 	MsgID   uint64
 	AgentID int
 }
@@ -47,8 +47,8 @@ type RecvTextDataPkg struct {
 // RecvImageDataPkg is a Image Message received from wechat platform.
 type RecvImageDataPkg struct {
 	pb.RecvBaseDataPkg
-	PicURL  pb.CDATAText
-	MediaID pb.CDATAText
+	PicURL  string
+	MediaID string
 	MsgID   uint64
 	AgentID int
 }
@@ -56,8 +56,8 @@ type RecvImageDataPkg struct {
 // RecvVoiceDataPkg is a Voice Message received from wechat platform.
 type RecvVoiceDataPkg struct {
 	pb.RecvBaseDataPkg
-	MediaID pb.CDATAText
-	Format  pb.CDATAText
+	MediaID string
+	Format  string
 	MsgID   uint64
 	AgentID int
 }
@@ -65,8 +65,8 @@ type RecvVoiceDataPkg struct {
 // RecvVideoDataPkg is a Video Message received from wechat platform.
 type RecvVideoDataPkg struct {
 	pb.RecvBaseDataPkg
-	MediaID      pb.CDATAText
-	ThumbMediaID pb.CDATAText
+	MediaID      string
+	ThumbMediaID string
 	MsgID        uint64
 	AgentID      int
 }
@@ -77,7 +77,7 @@ type RecvLocationDataPkg struct {
 	LocX    float64 `xml:"Location_X"`
 	LocY    float64 `xml:"Location_Y"`
 	Scale   int
-	Label   pb.CDATAText
+	Label   string
 	MsgID   uint64
 	AgentID int
 }
@@ -86,7 +86,7 @@ type RecvLocationDataPkg struct {
 // Message received from wechat platform.
 type RecvSubscribeEventDataPkg struct {
 	pb.RecvBaseDataPkg
-	Event   pb.CDATAText
+	Event   string
 	AgentID int
 }
 
@@ -94,7 +94,7 @@ type RecvSubscribeEventDataPkg struct {
 // received from wechat platform.
 type RecvLocationEventDataPkg struct {
 	pb.RecvBaseDataPkg
-	Event     pb.CDATAText
+	Event     string
 	Latitude  float64
 	Longitude float64
 	Precision float64
@@ -105,8 +105,8 @@ type RecvLocationEventDataPkg struct {
 // received from wechat platform.
 type RecvMenuEventDataPkg struct {
 	pb.RecvBaseDataPkg
-	Event    pb.CDATAText
-	EventKey pb.CDATAText
+	Event    string
+	EventKey string
 	AgentID  int
 }
 
@@ -123,9 +123,9 @@ type recvHandler struct {
 // 	<Encrypt><![CDATA[msg_encrypt]]</Encrypt>
 // </xml>
 type RecvHTTPReqBody struct {
-	ToUserName pb.CDATAText
-	AgentID    pb.CDATAText
-	Encrypt    pb.CDATAText
+	ToUserName string
+	AgentID    string
+	Encrypt    string
 }
 
 // RecvHTTPResqBody is a source for marshalling below xml data:
@@ -164,23 +164,36 @@ func (h *recvHandler) Parse(bodyText []byte) (interface{}, error) {
 		return nil, err
 	}
 
+	fmt.Println(reqBody.Encrypt)
 	// Decrpyt the "Encrypt" field.
 	var origData []byte
-	if origData, err = pb.DecryptMsg(reqBody.Encrypt.Text, h.encodingAESKey); err != nil {
+	var corpID string
+	origData, _, corpID, err = DecryptMsg(reqBody.Encrypt, h.encodingAESKey)
+	if err != nil {
 		return nil, err
 	}
 
+	fmt.Println(corpID)
+	fmt.Println(len(corpID))
+	fmt.Println(h.corpID)
+	fmt.Println(len(h.corpID))
+	if corpID != h.corpID {
+		return nil, fmt.Errorf("the request is from corp[%s], not from corp[%s]", corpID, h.corpID)
+	}
+
+	fmt.Println(string(origData))
+
 	// Probe the type of message.
 	probePkg := &struct {
-		MsgType pb.CDATAText
-		Event   pb.CDATAText
+		MsgType string
+		Event   string
 	}{}
 	if err = xml.Unmarshal(origData, probePkg); err != nil {
 		return nil, err
 	}
 
 	var dataPkg interface{}
-	switch probePkg.MsgType.Text {
+	switch probePkg.MsgType {
 	case TextMsg:
 		dataPkg = &RecvTextDataPkg{}
 	case ImageMsg:
@@ -192,7 +205,7 @@ func (h *recvHandler) Parse(bodyText []byte) (interface{}, error) {
 	case LocationMsg:
 		dataPkg = &RecvLocationDataPkg{}
 	case EventMsg:
-		switch probePkg.Event.Text {
+		switch probePkg.Event {
 		case SubscribeEvent, UnsubscribeEvent:
 			dataPkg = &RecvSubscribeEventDataPkg{}
 		case LocationEvent:
@@ -207,11 +220,11 @@ func (h *recvHandler) Parse(bodyText []byte) (interface{}, error) {
 		case LocationSelectEvent:
 		case EnterAgentEvent:
 		default:
-			return nil, fmt.Errorf("unknown event type: %s", probePkg.Event.Text)
+			return nil, fmt.Errorf("unknown event type: %s", probePkg.Event)
 		}
 
 	default:
-		return nil, fmt.Errorf("unknown msg type: %s", probePkg.MsgType.Text)
+		return nil, fmt.Errorf("unknown msg type: %s", probePkg.MsgType)
 	}
 
 	if err = xml.Unmarshal(origData, dataPkg); err != nil {
