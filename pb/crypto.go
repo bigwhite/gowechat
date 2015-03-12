@@ -12,7 +12,7 @@ import (
 )
 
 // DecryptMsg is used to descrpyt the encrypted msg from wechat.
-// it returns the origData of the cipherText.
+// it returns the origData of the cipherText. cipherText is msg_encrypt.
 // origData = AES_Decrypt(Base64_Decode[cipherText])
 func DecryptMsg(cipherText, encodingAESKey string) ([]byte, error) {
 	var cipherData []byte
@@ -71,7 +71,10 @@ func aesDecrypt(cipherData, AESKey []byte) ([]byte, error) {
 	blockMode := cipher.NewCBCDecrypter(block, iv)
 	origData := make([]byte, len(cipherData))
 	blockMode.CryptBlocks(origData, cipherData)
-	return origData, nil
+
+	origDataLen := len(origData)
+	tailPadElemNum := int(origData[origDataLen-1])
+	return origData[:origDataLen-tailPadElemNum], nil
 }
 
 func aesEncrypt(origData, AESKey []byte) ([]byte, error) {
