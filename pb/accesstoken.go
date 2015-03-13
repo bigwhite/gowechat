@@ -17,7 +17,7 @@ type AccessTokenResponse struct {
 
 // AccessTokenErrorResponse stores the error result of access token fetching.
 type AccessTokenErrorResponse struct {
-	Errcode float64
+	Errcode string
 	Errmsg  string
 }
 
