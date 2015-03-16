@@ -4,6 +4,7 @@ package qy
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 
 	"github.com/bigwhite/gowechat/pb"
 )
@@ -17,6 +18,7 @@ func DecryptMsg(cipherText, encodingAESKey string) ([]byte, int, string, error) 
 		return nil, 0, "", err
 	}
 
+	fmt.Println(origData[0:16])
 	// Read msg length
 	buf := bytes.NewBuffer(origData[16:20])
 	var msgLen int32
@@ -39,6 +41,7 @@ func EncryptMsg(msg []byte, corpID string, encodingAESKey string) (string, error
 	msgLen := buf.Bytes()
 	randomBytes := []byte("abcdefghijklmnop")
 	origData := bytes.Join([][]byte{randomBytes, msgLen, msg, []byte(corpID)}, nil)
+	fmt.Println(string(origData))
 
 	return pb.EncryptMsg(origData, encodingAESKey)
 }

@@ -143,6 +143,7 @@ type RecvHTTPReqBody struct {
 // 	<Nonce><![CDATA[nonce]]></Nonce>
 // </xml>
 type RecvHTTPRespBody struct {
+	XMLName      xml.Name `xml:"xml"`
 	Encrypt      pb.CDATAText
 	MsgSignature pb.CDATAText
 	TimeStamp    int
@@ -237,6 +238,29 @@ func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce string)
 		return nil, err
 	}
 	return dataPkg, nil
+}
+
+// Response returns the response body data for the request from wechat qy platform.
+func (h *recvHandler) Response(msgText string, timestamp int) ([]byte, error) {
+	nonce := "401544839"
+	/*
+		msgEncrypt := "sq1d1sgR6C39QKNRJk21zIwWZrVY4EJrpX3cVJznqSqeNJjbzbjUOMnrFAHGREBizLgVU68/IOWNE5VVzQH7cYG9CVHVtS10SJepGDXhvPjXxdsyRkoxX9YJcEsxQkV4u8niGDDSfUW69d93u2V1/gMfnkxo+0yHMZcS6rvRhMYA0O8TiE2W3K092ELdfWsLxNy2Gd/+Uv9D6IcyQ8uO/1Vu6x0KhuG9EtVSooEfdqqdpkOKyiaXn4bf/Umn0PQTurrO6Fh6ghgxPxpMIcSEzhfAMMCn14pojlt113yjrh6x1vYj3gElWGeMiOm3fpjuplOVwoDSVzcPaR5zLPgizAO3WQj0ho0JQh4RJ6ZRpmaDaPlHHBX7hAiOFOyc3bScUQQfk6tOfwAOAn4x44og+INaKJqtFhsJ6Wavr+H5mYo="
+	*/
+	msgText = "hello body"
+	msgEncrypt, err := EncryptMsg([]byte(msgText), h.corpID, h.encodingAESKey)
+	if err != nil {
+		return nil, err
+	}
+
+	signature := genSignature(h.token, fmt.Sprintf("%d", timestamp), nonce, msgEncrypt)
+	resp := &RecvHTTPRespBody{
+		Encrypt:      pb.String2CDATA(msgEncrypt),
+		MsgSignature: pb.String2CDATA(signature),
+		TimeStamp:    timestamp,
+		Nonce:        pb.String2CDATA(nonce),
+	}
+
+	return xml.MarshalIndent(resp, " ", "  ")
 }
 
 // ValidateSignature is used to validate the signature in request to figure out
