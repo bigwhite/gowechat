@@ -111,6 +111,12 @@ type RecvMenuEventDataPkg struct {
 	AgentID  int
 }
 
+type RecvEnterAgentDataPkg struct {
+	pb.RecvBaseDataPkg
+	Event    string
+	EventKey string
+}
+
 type recvHandler struct {
 	corpID         string
 	token          string
@@ -218,6 +224,7 @@ func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce string)
 		case PicWeiXinEvent:
 		case LocationSelectEvent:
 		case EnterAgentEvent:
+			dataPkg = &RecvEnterAgentDataPkg{}
 		default:
 			return nil, fmt.Errorf("unknown event type: %s", probePkg.Event)
 		}
