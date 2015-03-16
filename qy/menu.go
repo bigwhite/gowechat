@@ -2,6 +2,7 @@
 package qy
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/bigwhite/gowechat/pb"
@@ -13,6 +14,7 @@ const (
 
 func CreateMenu(menuLayout []byte, accessToken, agentID string) error {
 	reqLine := strings.Join([]string{url, "?access_token=", accessToken, "&agentid=", agentID}, "")
+	fmt.Println(reqLine)
 	return pb.CreateMenu(reqLine, menuLayout)
 
 }

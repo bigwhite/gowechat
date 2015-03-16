@@ -2,8 +2,16 @@ package pb
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
+	"io/ioutil"
 	"net/http"
 )
+
+type MenuCreateOpResp struct {
+	Errcode int
+	Errmsg  string
+}
 
 func CreateMenu(requestLine string, menuLayout []byte) error {
 	req, err := http.NewRequest("POST",
@@ -20,6 +28,22 @@ func CreateMenu(requestLine string, menuLayout []byte) error {
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	opResp := &MenuCreateOpResp{}
+	err = json.Unmarshal(body, opResp)
+	if err != nil {
+		return err
+	}
+
+	if opResp.Errcode != 0 {
+		return errors.New(opResp.Errmsg)
+	}
+
 	return nil
 }
