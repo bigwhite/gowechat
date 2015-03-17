@@ -3,8 +3,10 @@ package qy
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/binary"
-	"fmt"
+	"errors"
+	"io"
 
 	"github.com/bigwhite/gowechat/pb"
 )
@@ -18,13 +20,12 @@ func DecryptMsg(cipherText, encodingAESKey string) ([]byte, int, string, error) 
 		return nil, 0, "", err
 	}
 
-	fmt.Println(origData[0:16])
 	// Read msg length
 	buf := bytes.NewBuffer(origData[16:20])
 	var msgLen int32
 	binary.Read(buf, binary.BigEndian, &msgLen)
-	var msg []byte = origData[20 : 20+msgLen]
-	var corpID []byte = origData[20+msgLen:]
+	var msg = origData[20 : 20+msgLen]
+	var corpID = origData[20+msgLen:]
 
 	return msg, int(msgLen), string(corpID), nil
 }
@@ -33,15 +34,26 @@ func DecryptMsg(cipherText, encodingAESKey string) ([]byte, int, string, error) 
 // it returns msg_encrypt.
 // msg_encrypt = Base64_Encode( AES_Encrypt[random(16B) + msg_len(4B) + msg + $CorpID]).
 func EncryptMsg(msg []byte, corpID string, encodingAESKey string) (string, error) {
+	// Msg Length.
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.BigEndian, int32(len(msg)))
 	if err != nil {
 		return "", err
 	}
 	msgLen := buf.Bytes()
-	randomBytes := []byte("abcdefghijklmnop")
-	origData := bytes.Join([][]byte{randomBytes, msgLen, msg, []byte(corpID)}, nil)
-	fmt.Println(string(origData))
+
+	// Random Bytes, 16B
+	randBytes := make([]byte, 16)
+	n, err := io.ReadFull(rand.Reader, randBytes)
+	if err != nil {
+		return "", err
+	}
+
+	if n != 16 {
+		return "", errors.New("the length of generated random bytes is not enough")
+	}
+
+	origData := bytes.Join([][]byte{randBytes, msgLen, msg, []byte(corpID)}, nil)
 
 	return pb.EncryptMsg(origData, encodingAESKey)
 }

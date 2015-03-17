@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/bigwhite/gowechat/pb"
 )
@@ -115,6 +117,11 @@ type RecvEnterAgentDataPkg struct {
 	pb.RecvBaseDataPkg
 	Event    string
 	EventKey string
+}
+
+type RecvRespTextDataPkg struct {
+	pb.RecvRespBaseDataPkg
+	Content pb.CDATAText
 }
 
 type recvHandler struct {
@@ -240,17 +247,24 @@ func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce string)
 	return dataPkg, nil
 }
 
+func genNonce() string {
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	return fmt.Sprintf("%d", r.Int31())
+}
+
+func genTimestamp() int {
+	return int(time.Now().Unix())
+}
+
 // Response returns the response body data for the request from wechat qy platform.
-func (h *recvHandler) Response(msgText string, timestamp int) ([]byte, error) {
-	nonce := "401544839"
-	/*
-		msgEncrypt := "sq1d1sgR6C39QKNRJk21zIwWZrVY4EJrpX3cVJznqSqeNJjbzbjUOMnrFAHGREBizLgVU68/IOWNE5VVzQH7cYG9CVHVtS10SJepGDXhvPjXxdsyRkoxX9YJcEsxQkV4u8niGDDSfUW69d93u2V1/gMfnkxo+0yHMZcS6rvRhMYA0O8TiE2W3K092ELdfWsLxNy2Gd/+Uv9D6IcyQ8uO/1Vu6x0KhuG9EtVSooEfdqqdpkOKyiaXn4bf/Umn0PQTurrO6Fh6ghgxPxpMIcSEzhfAMMCn14pojlt113yjrh6x1vYj3gElWGeMiOm3fpjuplOVwoDSVzcPaR5zLPgizAO3WQj0ho0JQh4RJ6ZRpmaDaPlHHBX7hAiOFOyc3bScUQQfk6tOfwAOAn4x44og+INaKJqtFhsJ6Wavr+H5mYo="
-	*/
-	msgText = "hello body"
-	msgEncrypt, err := EncryptMsg([]byte(msgText), h.corpID, h.encodingAESKey)
+func (h *recvHandler) Response(msg []byte) ([]byte, error) {
+	msgEncrypt, err := EncryptMsg(msg, h.corpID, h.encodingAESKey)
 	if err != nil {
 		return nil, err
 	}
+
+	nonce := genNonce()
+	timestamp := genTimestamp()
 
 	signature := genSignature(h.token, fmt.Sprintf("%d", timestamp), nonce, msgEncrypt)
 	resp := &RecvHTTPRespBody{
