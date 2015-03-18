@@ -225,14 +225,14 @@ func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce string)
 			dataPkg = &RecvLocationEventDataPkg{}
 		case MenuClickEvent, MenuViewEvent:
 			dataPkg = &RecvMenuEventDataPkg{}
+		case EnterAgentEvent:
+			dataPkg = &RecvEnterAgentDataPkg{}
 		case ScanCodePushEvent:
 		case ScanCodeWaitEvent:
 		case PicSysPhotoEvent:
 		case PicPhotoOrAlbumEvent:
 		case PicWeiXinEvent:
 		case LocationSelectEvent:
-		case EnterAgentEvent:
-			dataPkg = &RecvEnterAgentDataPkg{}
 		default:
 			return nil, fmt.Errorf("unknown event type: %s", probePkg.Event)
 		}
