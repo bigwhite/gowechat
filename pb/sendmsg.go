@@ -11,7 +11,7 @@ type TextContent struct {
 }
 
 type SendMsgTextPkg struct {
-	ToUser  string      `json:"touser"`
+	ToUser  string      `json:"touser,omitempty"`
 	MsgType string      `json:"msgtype"`
 	Text    TextContent `json:"text"`
 }
@@ -21,7 +21,7 @@ type MediaID struct {
 }
 
 type SendMsgImagePkg struct {
-	ToUser  string  `json:"touser"`
+	ToUser  string  `json:"touser, omitempty"`
 	MsgType string  `json:"msgtype"`
 	Image   MediaID `json:"image"`
 }
