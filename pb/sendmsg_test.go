@@ -35,6 +35,20 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(pkg)
 
+	var resp string
+	if pkg.ToUser != "tonybai" {
+		resp = `{
+			"errcode" : 82001,
+			"errmsg" : "All touser & toparty & totag invalid"
+		}
+		`
+	} else {
+		resp = `{
+			"errcode" : 0,
+			"errmsg" : "ok"
+		}`
+	}
+	w.Write([]byte(resp))
 }
 
 func setup() {

@@ -3,6 +3,8 @@ package pb
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -26,13 +28,18 @@ type SendMsgImagePkg struct {
 	Image   MediaID `json:"image"`
 }
 
+type SendMsgRespPkg struct {
+	Errcode int    `json:"errcode"`
+	Errmsg  string `json:"errmsg"`
+}
+
 func SendMsg(requestLine string, pkg interface{}) error {
-	body, err := json.MarshalIndent(pkg, " ", "  ")
+	reqBody, err := json.MarshalIndent(pkg, " ", "  ")
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", requestLine, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", requestLine, bytes.NewReader(reqBody))
 	if err != nil {
 		return err
 	}
@@ -43,7 +50,21 @@ func SendMsg(requestLine string, pkg interface{}) error {
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	rPkg := &SendMsgRespPkg{}
+	err = json.Unmarshal(respBody, rPkg)
+	if err != nil {
+		return err
+	}
+
+	if rPkg.Errcode != 0 {
+		return errors.New(rPkg.Errmsg)
+	}
 
 	return nil
 }
