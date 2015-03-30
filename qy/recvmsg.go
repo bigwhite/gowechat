@@ -170,7 +170,7 @@ func NewRecvHandler(corpID, token, encodingAESKey string) pb.RecvHandler {
 //
 // Note: We suppose that r.ParseForm() has been invoked before entering this method.
 // and we suppose that you have validate the URL in the post request.
-func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce string) (interface{}, error) {
+func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce, encryptType string) (interface{}, error) {
 	var err error
 
 	// XML decoding.
