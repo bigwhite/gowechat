@@ -72,5 +72,6 @@ func TestSendMsg(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	go setup()
+	go setupForAccessToken()
 	os.Exit(m.Run())
 }

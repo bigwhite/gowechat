@@ -2,15 +2,9 @@
 package qy
 
 import (
-	"crypto/sha1"
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io"
-	"math/rand"
-	"sort"
-	"strings"
-	"time"
 
 	"github.com/bigwhite/gowechat/pb"
 )
@@ -170,7 +164,7 @@ func NewRecvHandler(corpID, token, encodingAESKey string) pb.RecvHandler {
 //
 // Note: We suppose that r.ParseForm() has been invoked before entering this method.
 // and we suppose that you have validate the URL in the post request.
-func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce, encryptType string) (interface{}, error) {
+func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce, encryptType string /* not used */) (interface{}, error) {
 	var err error
 
 	// XML decoding.
@@ -247,24 +241,15 @@ func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce, encryp
 	return dataPkg, nil
 }
 
-func genNonce() string {
-	r := rand.New(rand.NewSource(time.Now().Unix()))
-	return fmt.Sprintf("%d", r.Int31())
-}
-
-func genTimestamp() int {
-	return int(time.Now().Unix())
-}
-
 // Response returns the response body data for the request from wechat qy platform.
-func (h *recvHandler) Response(msg []byte) ([]byte, error) {
+func (h *recvHandler) Response(msg []byte, encryptType string /* not used */) ([]byte, error) {
 	msgEncrypt, err := EncryptMsg(msg, h.corpID, h.encodingAESKey)
 	if err != nil {
 		return nil, err
 	}
 
-	nonce := genNonce()
-	timestamp := genTimestamp()
+	nonce := pb.GenNonce()
+	timestamp := pb.GenTimestamp()
 
 	signature := genSignature(h.token, fmt.Sprintf("%d", timestamp), nonce, msgEncrypt)
 	resp := &RecvHTTPRespBody{
@@ -285,11 +270,7 @@ func ValidateSignature(signature, token, timestamp, nonce, msgEncrypt string) bo
 
 // dev_msg_signature=sha1(sort(token、timestamp、nonce、msg_encrypt))
 func genSignature(token, timestamp, nonce, msgEncrypt string) string {
-	sl := []string{token, timestamp, nonce, msgEncrypt}
-	sort.Strings(sl)
-	s := sha1.New()
-	io.WriteString(s, strings.Join(sl, ""))
-	return fmt.Sprintf("%x", s.Sum(nil))
+	return pb.GenSignature(token, timestamp, nonce, msgEncrypt)
 }
 
 func ValidateURL(signature, token, timestamp, nonce, cipherEchoStr, encodingAESKey string) (bool, []byte) {

@@ -13,5 +13,5 @@ const (
 
 func CreateMenu(menuLayout []byte, accessToken, agentID string) error {
 	reqLine := strings.Join([]string{url, "?access_token=", accessToken}, "")
-	return pb.CreateMenu(req, menuLayout)
+	return pb.CreateMenu(reqLine, menuLayout)
 }

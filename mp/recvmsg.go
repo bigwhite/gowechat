@@ -2,12 +2,9 @@
 package mp
 
 import (
-	"crypto/sha1"
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io"
-	"sort"
 	"strings"
 
 	"github.com/bigwhite/gowechat/pb"
@@ -21,7 +18,7 @@ const (
 	VideoMsg      = "video"
 	ShortVideoMsg = "shortvideo"
 	LocationMsg   = "location"
-	LinkMsg       = "location"
+	LinkMsg       = "link"
 	EventMsg      = "event"
 
 	// Event type
@@ -33,6 +30,116 @@ const (
 	ScanEvent        = "SCAN"
 )
 
+// RecvTextDataPkg is a Text Message received from wechat platform.
+type RecvTextDataPkg struct {
+	pb.RecvBaseDataPkg
+	Content string
+	MsgID   uint64
+}
+
+// RecvImageDataPkg is a Image Message received from wechat platform.
+type RecvImageDataPkg struct {
+	pb.RecvBaseDataPkg
+	PicURL  string
+	MediaID string
+	MsgID   uint64
+}
+
+// RecvVoiceDataPkg is a Voice Message received from wechat platform.
+type RecvVoiceDataPkg struct {
+	pb.RecvBaseDataPkg
+	MediaID string
+	Format  string
+	MsgID   uint64
+}
+
+// RecvVideoDataPkg is a Video Message received from wechat platform.
+type RecvVideoDataPkg struct {
+	pb.RecvBaseDataPkg
+	MediaID      string
+	ThumbMediaID string
+	MsgID        uint64
+}
+
+// RecvShortVideoDataPkg is a short video Message received from wechat platform.
+type RecvShortVideoDataPkg struct {
+	pb.RecvBaseDataPkg
+	MediaID      string
+	ThumbMediaID string
+	MsgID        uint64
+}
+
+// RecvLocationDataPkg is a Location Message received from wechat platform.
+type RecvLocationDataPkg struct {
+	pb.RecvBaseDataPkg
+	LocX  float64 `xml:"Location_X"`
+	LocY  float64 `xml:"Location_Y"`
+	Scale int
+	Label string
+	MsgID uint64
+}
+
+// RecvLinkDataPkg is a Link Message received from wechat platform.
+type RecvLinkDataPkg struct {
+	pb.RecvBaseDataPkg
+	Title       string
+	Description string
+	URL         string
+	MsgID       uint64
+}
+
+// RecvSubscribeEventDataPkg is a Subscribe/Unsubscribe event
+// Message received from wechat platform.
+type RecvSubscribeEventDataPkg struct {
+	pb.RecvBaseDataPkg
+	Event string
+}
+
+// RecvUnsubscribeScanDataPkg is a scan event from unsubscribe user
+// from wechat platform.
+type RecvUnsubscribeScanEventDataPkg struct {
+	pb.RecvBaseDataPkg
+	Event    string
+	EventKey string
+	Ticket   string
+}
+
+// RecvScanDataPkg is a scan event from subscribed user
+// from wechat platform.
+type RecvScanEventDataPkg struct {
+	pb.RecvBaseDataPkg
+	Event    string
+	EventKey string
+	Ticket   string
+}
+
+// RecvLocationEventDataPkg is a Location event Message
+// received from wechat platform.
+type RecvLocationEventDataPkg struct {
+	pb.RecvBaseDataPkg
+	Event     string
+	Latitude  float64
+	Longitude float64
+	Precision float64
+}
+
+// RecvMenuEventDataPkg is a Menu Click event Message
+// received from wechat platform.
+type RecvMenuEventDataPkg struct {
+	pb.RecvBaseDataPkg
+	Event    string
+	EventKey string
+}
+
+// RecvVoiceRecognitionDataPkg is a Voice recognition Message received from wechat platform.
+type RecvVoiceRecognitionDataPkg struct {
+	pb.RecvBaseDataPkg
+	MediaID     string
+	Format      string
+	Recognition string
+	MsgID       uint64
+}
+
 // RecvHTTPEncryptReqBody is a unmarshall result for below xml data:
 // <xml>
 //  <ToUserName><![CDATA[toUser]]</ToUserName>
@@ -41,6 +148,21 @@ const (
 type RecvHTTPEncryptReqBody struct {
 	ToUserName string
 	Encrypt    string
+}
+
+// RecvHTTPEncryptResqBody is a source for marshalling below xml data:
+// <xml>
+//  <Encrypt><![CDATA[msg_encrypt]]></Encrypt>
+//  <MsgSignature><![CDATA[msg_signature]]></MsgSignature>
+//  <TimeStamp>timestamp</TimeStamp>
+//  <Nonce><![CDATA[nonce]]></Nonce>
+// </xml>
+type RecvHTTPEncryptRespBody struct {
+	XMLName      xml.Name `xml:"xml"`
+	Encrypt      pb.CDATAText
+	MsgSignature pb.CDATAText
+	TimeStamp    int
+	Nonce        pb.CDATAText
 }
 
 type recvHandler struct {
@@ -56,11 +178,7 @@ func ValidateSignature(signature, token, timestamp, nonce string) bool {
 }
 
 func genSignature(token, timestamp, nonce string) string {
-	sl := []string{token, timestamp, nonce}
-	sort.Strings(sl)
-	s := sha1.New()
-	io.WriteString(s, strings.Join(sl, ""))
-	return fmt.Sprintf("%x", s.Sum(nil))
+	return pb.GenSignature(token, timestamp, nonce)
 }
 
 // NewRecvHandler creates an instance of recvHandler
@@ -107,8 +225,10 @@ func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce, encryp
 
 	// Probe the type of message.
 	probePkg := &struct {
-		MsgType string
-		Event   string
+		MsgType     string
+		Event       string
+		EventKey    string
+		Recognition string
 	}{}
 	if err = xml.Unmarshal(origData, probePkg); err != nil {
 		return nil, err
@@ -121,7 +241,11 @@ func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce, encryp
 	case ImageMsg:
 		dataPkg = &RecvImageDataPkg{}
 	case VoiceMsg:
-		dataPkg = &RecvVoiceDataPkg{}
+		if probePkg.Recognition == "" {
+			dataPkg = &RecvVoiceDataPkg{}
+		} else {
+			dataPkg = &RecvVoiceRecognitionDataPkg{}
+		}
 	case VideoMsg:
 		dataPkg = &RecvVideoDataPkg{}
 	case ShortVideoMsg:
@@ -132,23 +256,52 @@ func (h *recvHandler) Parse(bodyText []byte, signature, timestamp, nonce, encryp
 		dataPkg = &RecvLocationDataPkg{}
 	case EventMsg:
 		switch probePkg.Event {
-		case SubscribeEvent, UnsubscribeEvent:
+		case SubscribeEvent:
+			if strings.Contains(probePkg.EventKey, "qrscene_") {
+				dataPkg = &RecvUnsubscribeScanEventDataPkg{}
+			} else {
+				dataPkg = &RecvSubscribeEventDataPkg{}
+			}
+		case UnsubscribeEvent:
 			dataPkg = &RecvSubscribeEventDataPkg{}
+		case ScanEvent:
+			dataPkg = &RecvScanEventDataPkg{}
 		case LocationEvent:
 			dataPkg = &RecvLocationEventDataPkg{}
 		case MenuClickEvent, MenuViewEvent:
 			dataPkg = &RecvMenuEventDataPkg{}
-		case EnterAgentEvent:
-			dataPkg = &RecvEnterAgentDataPkg{}
-		case ScanCodePushEvent:
-		case ScanCodeWaitEvent:
-		case PicSysPhotoEvent:
-		case PicPhotoOrAlbumEvent:
-		case PicWeiXinEvent:
-		case LocationSelectEvent:
 		default:
 			return nil, fmt.Errorf("unknown event type: %s", probePkg.Event)
 		}
 	default:
+		return nil, fmt.Errorf("unknown msg type: %s", probePkg.MsgType)
 	}
+
+	if err = xml.Unmarshal(origData, dataPkg); err != nil {
+		return nil, err
+	}
+	return dataPkg, nil
+}
+
+// Response returns the response body data for the request from wechat mp platform.
+func (h *recvHandler) Response(msg []byte, encryptType string) ([]byte, error) {
+	if encryptType == "aes" {
+		msgEncrypt, err := EncryptMsg(msg, h.appID, h.encodingAESKey)
+		if err != nil {
+			return nil, err
+		}
+
+		nonce := pb.GenNonce()
+		timestamp := pb.GenTimestamp()
+		signature := pb.GenSignature(h.token, fmt.Sprintf("%d", timestamp), nonce, msgEncrypt)
+
+		resp := &RecvHTTPEncryptRespBody{
+			Encrypt:      pb.String2CDATA(msgEncrypt),
+			MsgSignature: pb.String2CDATA(signature),
+			TimeStamp:    timestamp,
+			Nonce:        pb.String2CDATA(nonce),
+		}
+		return xml.MarshalIndent(resp, " ", "  ")
+	}
+	return msg, nil
 }

@@ -3,7 +3,6 @@ package pb_test
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
@@ -55,7 +54,7 @@ func tokenFetchHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(respData))
 }
 
-func setup() {
+func setupForAccessToken() {
 	// Create a server for access token fetching test.
 	http.HandleFunc("/cgi-bin/gettoken", tokenFetchHandler)
 	http.ListenAndServe(":9000", nil)
@@ -102,9 +101,4 @@ func TestSecretInvalid(t *testing.T) {
 	if errStr != "invalid corpSecret" {
 		t.Errorf("Errmsg: want[%s], but actually[%s]", "invalid corpSecret", errStr)
 	}
-}
-
-func TestMain(m *testing.M) {
-	go setup()
-	os.Exit(m.Run())
 }
