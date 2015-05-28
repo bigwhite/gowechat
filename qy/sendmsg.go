@@ -39,7 +39,7 @@ type SendMsgNewsPkg struct {
 	ToTag      string    `json:"totag,omitempty"`
 	MsgType    string    `json:"msgtype"`
 	AgentID    string    `json:"agentid"`
-	Articals   []Artical `json:"articals"`
+	News       []Artical `json:"news"`
 }
 
 func SendMsg(accessToken string, pkg interface{}) error {
