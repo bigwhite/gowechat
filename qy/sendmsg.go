@@ -26,15 +26,15 @@ type SendMsgImagePkg struct {
 	Safe    string `json:"safe,omitempty"`
 }
 
-type Artical struct {
+type Article struct {
 	Title       string `json:"title,omitempty"`
 	Description string `json:"description,omitempty"`
 	Url         string `json:"url,omitempty"`
 	PicUrl      string `json:"picurl,omitempty"`
 }
 
-type Articals struct {
-	Arcs []Artical `json:"articals"`
+type Articles struct {
+	Articles []Article `json:"articles"`
 }
 type SendMsgNewsPkg struct {
 	ToUserName string   `json:"touser"`
@@ -42,7 +42,7 @@ type SendMsgNewsPkg struct {
 	ToTag      string   `json:"totag,omitempty"`
 	MsgType    string   `json:"msgtype"`
 	AgentID    string   `json:"agentid"`
-	News       Articals `json:"news"`
+	News       Articles `json:"news"`
 }
 
 func SendMsg(accessToken string, pkg interface{}) error {
