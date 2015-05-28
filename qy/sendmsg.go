@@ -33,13 +33,16 @@ type Artical struct {
 	PicUrl      string `json:"picurl,omitempty"`
 }
 
+type Articals struct {
+	Arcs []Artical `json:"articals"`
+}
 type SendMsgNewsPkg struct {
-	ToUserName string    `json:"touser"`
-	ToParty    string    `json:"toparty,omitempty"`
-	ToTag      string    `json:"totag,omitempty"`
-	MsgType    string    `json:"msgtype"`
-	AgentID    string    `json:"agentid"`
-	News       []Artical `json:"news"`
+	ToUserName string   `json:"touser"`
+	ToParty    string   `json:"toparty,omitempty"`
+	ToTag      string   `json:"totag,omitempty"`
+	MsgType    string   `json:"msgtype"`
+	AgentID    string   `json:"agentid"`
+	News       Articals `json:"news"`
 }
 
 func SendMsg(accessToken string, pkg interface{}) error {
