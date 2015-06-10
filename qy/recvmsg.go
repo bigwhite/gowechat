@@ -37,34 +37,34 @@ const (
 type RecvTextDataPkg struct {
 	pb.RecvBaseDataPkg
 	Content string
-	MsgID   uint64
+	MsgID   uint64 `xml:"MsgId"`
 	AgentID int
 }
 
 // RecvImageDataPkg is a Image Message received from wechat platform.
 type RecvImageDataPkg struct {
 	pb.RecvBaseDataPkg
-	PicURL  string
-	MediaID string
-	MsgID   uint64
+	PicURL  string `xml:"PicUrl"`
+	MediaID string `xml:"MediaId"`
+	MsgID   uint64 `xml:"MsgId"`
 	AgentID int
 }
 
 // RecvVoiceDataPkg is a Voice Message received from wechat platform.
 type RecvVoiceDataPkg struct {
 	pb.RecvBaseDataPkg
-	MediaID string
+	MediaID string `xml:"MediaId"`
 	Format  string
-	MsgID   uint64
+	MsgID   uint64 `xml:"MsgId"`
 	AgentID int
 }
 
 // RecvVideoDataPkg is a Video Message received from wechat platform.
 type RecvVideoDataPkg struct {
 	pb.RecvBaseDataPkg
-	MediaID      string
-	ThumbMediaID string
-	MsgID        uint64
+	MediaID      string `xml:"MediaId"`
+	ThumbMediaID string `xml:"ThumbMediaId"`
+	MsgID        uint64 `xml:"MsgId"`
 	AgentID      int
 }
 
@@ -75,7 +75,7 @@ type RecvLocationDataPkg struct {
 	LocY    float64 `xml:"Location_Y"`
 	Scale   int
 	Label   string
-	MsgID   uint64
+	MsgID   uint64 `xml:"MsgId"`
 	AgentID int
 }
 

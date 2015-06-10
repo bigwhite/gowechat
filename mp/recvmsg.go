@@ -34,7 +34,7 @@ const (
 type RecvTextDataPkg struct {
 	pb.RecvBaseDataPkg
 	Content string
-	MsgID   uint64
+	MsgID   uint64 `xml:"MsgId"`
 }
 
 // RecvImageDataPkg is a Image Message received from wechat platform.
@@ -42,7 +42,7 @@ type RecvImageDataPkg struct {
 	pb.RecvBaseDataPkg
 	PicURL  string
 	MediaID string
-	MsgID   uint64
+	MsgID   uint64 `xml:"MsgId"`
 }
 
 // RecvVoiceDataPkg is a Voice Message received from wechat platform.
@@ -50,7 +50,7 @@ type RecvVoiceDataPkg struct {
 	pb.RecvBaseDataPkg
 	MediaID string
 	Format  string
-	MsgID   uint64
+	MsgID   uint64 `xml:"MsgId"`
 }
 
 // RecvVideoDataPkg is a Video Message received from wechat platform.
@@ -58,7 +58,7 @@ type RecvVideoDataPkg struct {
 	pb.RecvBaseDataPkg
 	MediaID      string
 	ThumbMediaID string
-	MsgID        uint64
+	MsgID        uint64 `xml:"MsgId"`
 }
 
 // RecvShortVideoDataPkg is a short video Message received from wechat platform.
@@ -66,7 +66,7 @@ type RecvShortVideoDataPkg struct {
 	pb.RecvBaseDataPkg
 	MediaID      string
 	ThumbMediaID string
-	MsgID        uint64
+	MsgID        uint64 `xml:"MsgId"`
 }
 
 // RecvLocationDataPkg is a Location Message received from wechat platform.
@@ -76,7 +76,7 @@ type RecvLocationDataPkg struct {
 	LocY  float64 `xml:"Location_Y"`
 	Scale int
 	Label string
-	MsgID uint64
+	MsgID uint64 `xml:"MsgId"`
 }
 
 // RecvLinkDataPkg is a Link Message received from wechat platform.
@@ -84,8 +84,8 @@ type RecvLinkDataPkg struct {
 	pb.RecvBaseDataPkg
 	Title       string
 	Description string
-	URL         string
-	MsgID       uint64
+	URL         string `xml:"Url"`
+	MsgID       uint64 `xml:"MsgId"`
 }
 
 // RecvSubscribeEventDataPkg is a Subscribe/Unsubscribe event
@@ -134,10 +134,10 @@ type RecvMenuEventDataPkg struct {
 // RecvVoiceRecognitionDataPkg is a Voice recognition Message received from wechat platform.
 type RecvVoiceRecognitionDataPkg struct {
 	pb.RecvBaseDataPkg
-	MediaID     string
+	MediaID     string `xml:"MediaId"`
 	Format      string
 	Recognition string
-	MsgID       uint64
+	MsgID       uint64 `xml:"MsgId"`
 }
 
 // RecvHTTPEncryptReqBody is a unmarshall result for below xml data:
