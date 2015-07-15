@@ -1,4 +1,4 @@
-package pb_test
+package qy_test
 
 import (
 	"fmt"
